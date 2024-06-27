@@ -1,4 +1,11 @@
-import { IsEmail, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { PartialType } from '@nestjs/mapped-types';
 
@@ -21,8 +28,13 @@ export class CreateUserDto {
   email: string;
 
   @IsNotEmpty()
-  @MinLength(8)
-  @MaxLength(32)
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @Matches(/[A-Za-z]/, { message: 'Password must contain at least one letter' })
+  @Matches(/\d/, { message: 'Password must contain at least one number' })
+  @Matches(/[^A-Za-z0-9]/, {
+    message: 'Password must contain at least one special character',
+  })
   @Transform(({ value }) => value.trim())
   password: string;
 }
