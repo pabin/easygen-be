@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,10 +13,18 @@ import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { IUser } from 'src/users/schemas/user.schema';
 
 import { UserLoginDto } from './dto/user-login.dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { JwtService } from '@nestjs/jwt';
+import { LoginResponse } from './interfaces/login-response.interface';
 
 @Injectable()
 export class AuthService {
-  constructor(@InjectModel('User') private userModel: Model<IUser>) {}
+  constructor(
+    @InjectModel('User')
+    private userModel: Model<IUser>,
+
+    private readonly jwtService: JwtService,
+  ) {}
 
   /**
    * Creates a new user.
@@ -38,6 +48,7 @@ export class AuthService {
     try {
       const user = await createdUser.save();
       const userObject = user.toObject();
+
       delete userObject.password;
 
       return userObject;
@@ -50,7 +61,46 @@ export class AuthService {
     }
   }
 
-  async userLogin(userLoginDto: UserLoginDto) {
-    console.log('userLoginDto', userLoginDto);
+  /**
+   * Logs in a user with the provided email and password.
+   *
+   * @param {UserLoginDto} userLoginDto - Data transfer object for user login.
+   * @returns {Promise<{ token: string, user: IUser }>} An object containing the JWT token and user details.
+   * @throws {UnauthorizedException} If the email or password is incorrect.
+   */
+  // async userLogin(userLoginDto: UserLoginDto): Promise<IUser | null> {
+  async userLogin(userLoginDto: UserLoginDto): Promise<LoginResponse> {
+    const { email, password } = userLoginDto;
+
+    try {
+      const user = await this.userModel
+        .findOne({ email })
+        .select('+password')
+        .exec();
+
+      if (!user) {
+        throw new UnauthorizedException('User acccont does not exist !');
+      }
+
+      if (user && (await bcrypt.compare(password, user.password))) {
+        const refreshTokenLife = process.env.REFRESH_TOKEN_VALIDITY;
+        const secret = process.env.REFRESH_TOKEN_SECRET;
+
+        const payload: JwtPayload = { email: user.email };
+        const accessToken: string = this.jwtService.sign(payload);
+
+        const signOptions = { secret, expiresIn: refreshTokenLife };
+        const refreshToken = this.jwtService.sign({ email }, signOptions);
+
+        const userObject = user.toObject();
+        delete userObject.password;
+
+        return { user: userObject, accessToken, refreshToken };
+      } else {
+        throw new UnauthorizedException('Invalid login credentials !');
+      }
+    } catch (error) {
+      throw new InternalServerErrorException('server error !!');
+    }
   }
 }
