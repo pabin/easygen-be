@@ -3,16 +3,17 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 
+import { UserSchema } from 'src/users/schemas/user.schema';
+
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UserSchema } from 'src/users/schemas/user.schema';
 import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.ACCESS_TOKEN_SECRET || 'BHrW7rv2MfYQ',
+      secret: process.env.ACCESS_TOKEN_SECRET || 'BHrW7rv2MfYQ', // for dev env
       signOptions: {
         expiresIn: process.env.ACCESS_TOKEN_VALIDITY || 3600,
       },

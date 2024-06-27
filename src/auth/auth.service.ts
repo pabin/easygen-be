@@ -8,13 +8,13 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { IUser } from 'src/users/schemas/user.schema';
 
 import { UserLoginDto } from './dto/user-login.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { JwtService } from '@nestjs/jwt';
 import { LoginResponse } from './interfaces/login-response.interface';
 
 @Injectable()
