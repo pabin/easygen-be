@@ -9,6 +9,8 @@ export class AuthService {
   }
 
   userLogin(userLoginDto: UserLoginDto) {
+    console.log('userLoginDto', userLoginDto);
+
     return `This action returns all users`;
   }
 }

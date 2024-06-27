@@ -5,7 +5,11 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableVersioning({ type: VersioningType.URI });
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+    prefix: 'api/v',
+  });
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
