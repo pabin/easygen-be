@@ -30,11 +30,11 @@ export class AuthService {
    * Creates a new user.
    *
    * @param {CreateUserDto} createUserDto - Data transfer object for creating a user.
-   * @returns {Promise<IUser>} The created user.
+   * @returns {Promise<{ accessToken: string, refreshToken: string user: IUser }>} An object containing the JWT token and user details.
    * @throws {ConflictException} Throws ConflictException if the email already exists.
    * @throws {BadRequestException} Throws BadRequestException on other errors.
    */
-  async userRegistration(createUserDto: CreateUserDto): Promise<IUser> {
+  async userRegistration(createUserDto: CreateUserDto): Promise<LoginResponse> {
     const { password, ...rest } = createUserDto;
 
     const salt = await bcrypt.genSalt();
@@ -51,7 +51,7 @@ export class AuthService {
 
       delete userObject.password;
 
-      return userObject;
+      return this.userLogin({ password, email: createUserDto.email });
     } catch (error) {
       if (error.code === 11000) {
         throw new ConflictException('Email address already exist !');
@@ -65,42 +65,53 @@ export class AuthService {
    * Logs in a user with the provided email and password.
    *
    * @param {UserLoginDto} userLoginDto - Data transfer object for user login.
-   * @returns {Promise<{ token: string, user: IUser }>} An object containing the JWT token and user details.
+   * @returns {Promise<{ accessToken: string, refreshToken: string user: IUser }>} An object containing the JWT token and user details.
    * @throws {UnauthorizedException} If the email or password is incorrect.
    */
   // async userLogin(userLoginDto: UserLoginDto): Promise<IUser | null> {
   async userLogin(userLoginDto: UserLoginDto): Promise<LoginResponse> {
     const { email, password } = userLoginDto;
 
-    try {
-      const user = await this.userModel
-        .findOne({ email })
-        .select('+password')
-        .exec();
+    const user = await this.userModel
+      .findOne({ email })
+      .select('+password')
+      .exec();
 
-      if (!user) {
-        throw new UnauthorizedException('User acccont does not exist !');
-      }
-
-      if (user && (await bcrypt.compare(password, user.password))) {
-        const refreshTokenLife = process.env.REFRESH_TOKEN_VALIDITY;
-        const secret = process.env.REFRESH_TOKEN_SECRET;
-
-        const payload: JwtPayload = { email: user.email };
-        const accessToken: string = this.jwtService.sign(payload);
-
-        const signOptions = { secret, expiresIn: refreshTokenLife };
-        const refreshToken = this.jwtService.sign({ email }, signOptions);
-
-        const userObject = user.toObject();
-        delete userObject.password;
-
-        return { user: userObject, accessToken, refreshToken };
-      } else {
-        throw new UnauthorizedException('Invalid login credentials !');
-      }
-    } catch (error) {
-      throw new InternalServerErrorException('server error !!');
+    if (!user) {
+      throw new UnauthorizedException('User acccont does not exist !');
     }
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      const refreshTokenLife = process.env.REFRESH_TOKEN_VALIDITY;
+      const secret = process.env.REFRESH_TOKEN_SECRET;
+
+      const payload: JwtPayload = { email: user.email };
+      const accessToken: string = this.jwtService.sign(payload);
+
+      const signOptions = { secret, expiresIn: refreshTokenLife };
+      const refreshToken = this.jwtService.sign({ email }, signOptions);
+
+      const userObject = user.toObject();
+      delete userObject.password;
+
+      return { user: userObject, accessToken, refreshToken };
+    } else {
+      throw new UnauthorizedException('Invalid login credentials !');
+    }
+  }
+
+  /**
+   * Refresh user access token.
+   *
+   * @param {IUser} user - The user object containing user information.
+   * @returns {Promise<{ accessToken: string, user: IUser }>} An object containing the JWT token and user details.
+   */
+  async refreshAccessToken(user: IUser): Promise<Partial<LoginResponse>> {
+    const { email } = user;
+
+    const payload: JwtPayload = { email };
+    const accessToken: string = this.jwtService.sign(payload);
+
+    return { user, accessToken };
   }
 }
