@@ -30,6 +30,14 @@ yarn
 yarn start:dev
 ```
 
+### Setup .env file with following key and respective values
+```
+DATABASE=your_mongodb_host eg: mongodb://localhost/easygendb
+ACCESS_TOKEN_SECRET=your_access_token_secret
+ACCESS_TOKEN_VALIDITY=access_token_validty_in_seconds
+REFRESH_TOKEN_SECRET=your_refresh_token_secret
+REFRESH_TOKEN_VALIDITY=refresh_token_validty_in_seconds
+```
 
 ### Demo VIDEO
 https://drive.google.com/file/d/1WrP9lhHo2yiF5qZOLoNv_6lM8rBGXHki/view?usp=drive_link
