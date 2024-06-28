@@ -13,6 +13,12 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
+  app.enableCors({
+    origin: ['http://localhost:3001', 'http://127.0.0.1:3001'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true,
+  });
+
   await app.listen(3000);
 }
 bootstrap();
