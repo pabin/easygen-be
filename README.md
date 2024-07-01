@@ -2,8 +2,8 @@
 
 ### Clone Project Repository
 ```
-git clone https://github.com/pabin/easygen-be.git
-cd easygen-be
+git clone https://github.com/pabin/nestjs-auth-template.git
+cd nestjs-auth-template
 ```
 
 ### Setting up node and yarn
